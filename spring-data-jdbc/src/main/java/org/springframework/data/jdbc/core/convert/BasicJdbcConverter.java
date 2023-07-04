@@ -456,8 +456,8 @@ public class BasicJdbcConverter extends BasicRelationalConverter implements Jdbc
 		private Iterable<Object> resolveRelation(@Nullable Object id, RelationalPersistentProperty property) {
 
 			Identifier identifier = id == null //
-					? this.identifier.withPart(rootPath.getQualifierColumn(), key, Object.class) //
-					: Identifier.of(rootPath.append(property).getReverseColumnName(), id, Object.class);
+					? this.identifier.withPart(rootPath.getTableInfo().getQualifierColumnInfo().name(), key, Object.class) //
+					: Identifier.of(rootPath.append(property).getTableInfo().getReverseColumnInfo().name(), id, Object.class);
 
 			PersistentPropertyPath<? extends RelationalPersistentProperty> propertyPath = path.append(property)
 					.getRequiredPersistentPropertyPath();

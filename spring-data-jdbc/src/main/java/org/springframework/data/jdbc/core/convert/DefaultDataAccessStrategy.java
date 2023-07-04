@@ -399,8 +399,9 @@ public class DefaultDataAccessStrategy implements DataAccessStrategy {
 
 	private RowMapper<?> getMapEntityRowMapper(AggregatePath path, Identifier identifier) {
 
-		SqlIdentifier keyColumn = path.getQualifierColumn();
-		Assert.notNull(keyColumn, () -> "KeyColumn must not be null for " + path);
+		AggregatePath.ColumnInfo qualifierColumnInfo = path.getTableInfo().getQualifierColumnInfo();
+		Assert.notNull(qualifierColumnInfo, () -> "Qualifier column must not be null for " + path);
+		SqlIdentifier keyColumn = qualifierColumnInfo.name();
 
 		return new MapEntityRowMapper<>(path, converter, identifier, keyColumn);
 	}

@@ -57,7 +57,8 @@ class JdbcPropertyValueProvider implements PropertyValueProvider<RelationalPersi
 	}
 
 	private String getColumnName(RelationalPersistentProperty property) {
-		return basePath.append(property).getColumnAlias().getReference();
+		AggregatePath.ColumnInfo columnInfo = basePath.append(property).getColumnInfo();
+		return columnInfo.alias().getReference();
 	}
 
 	public JdbcPropertyValueProvider extendBy(RelationalPersistentProperty property) {

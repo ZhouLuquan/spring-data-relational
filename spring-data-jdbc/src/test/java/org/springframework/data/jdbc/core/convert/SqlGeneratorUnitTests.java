@@ -40,9 +40,9 @@ import org.springframework.data.relational.core.dialect.AnsiDialect;
 import org.springframework.data.relational.core.dialect.Dialect;
 import org.springframework.data.relational.core.dialect.PostgresDialect;
 import org.springframework.data.relational.core.dialect.SqlServerDialect;
+import org.springframework.data.relational.core.mapping.AggregatePath;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.DefaultNamingStrategy;
-import org.springframework.data.relational.core.mapping.PersistentPropertyPathExtension;
 import org.springframework.data.relational.core.mapping.RelationalMappingContext;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -388,7 +388,7 @@ class SqlGeneratorUnitTests {
 	void findAllByPropertyWithKey() {
 
 		// this would get called when ListParent is th element type of a Map
-		String sql = sqlGenerator.getFindAllByProperty(BACKREF, unquoted("key-column"), false);
+		String sql = sqlGenerator.getFindAllByProperty(BACKREF, new AggregatePath.ColumnInfo(unquoted("key-column"),unquoted("key-column")), false);
 
 		assertThat(sql).isEqualTo("SELECT dummy_entity.id1 AS id1, dummy_entity.x_name AS x_name, " //
 				+ "dummy_entity.x_other AS x_other, " //
@@ -411,7 +411,8 @@ class SqlGeneratorUnitTests {
 	void findAllByPropertyWithKeyOrdered() {
 
 		// this would get called when ListParent is th element type of a Map
-		String sql = sqlGenerator.getFindAllByProperty(BACKREF, unquoted("key-column"), true);
+		String sql = sqlGenerator.getFindAllByProperty(BACKREF,
+				new AggregatePath.ColumnInfo(unquoted("key-column"), unquoted("key-column")), true);
 
 		assertThat(sql).isEqualTo("SELECT dummy_entity.id1 AS id1, dummy_entity.x_name AS x_name, " //
 				+ "dummy_entity.x_other AS x_other, " //
@@ -431,8 +432,10 @@ class SqlGeneratorUnitTests {
 		final SqlGenerator sqlGenerator = createSqlGenerator(ReferencedEntity.class);
 		final String sql = sqlGenerator.getFindAllByProperty(
 				Identifier.of(quoted("id"), "parent-id-value", DummyEntity.class), //
-				quoted("X_L1ID"), // this key column collides with the name derived by the naming strategy for the id of
-													// ReferencedEntity.
+				new AggregatePath.ColumnInfo(quoted("X_L1ID"), quoted("X_L1ID")), // this key column collides with the name
+																																					// derived by the naming strategy for the id
+																																					// of
+				// ReferencedEntity.
 				false);
 
 		final String id = "referenced_entity.x_l1id AS x_l1id";
@@ -446,10 +449,11 @@ class SqlGeneratorUnitTests {
 	void findAllByPropertyWithEmptyBackrefColumn() {
 
 		Identifier emptyIdentifier = Identifier.of(EMPTY, 0, Object.class);
-		assertThatThrownBy(() -> sqlGenerator.getFindAllByProperty(emptyIdentifier, unquoted("key-column"), false)) //
-				.isInstanceOf(IllegalArgumentException.class) //
-				.hasMessageContaining(
-						"An empty SqlIdentifier can't be used in condition. Make sure that all composite primary keys are defined in the query");
+		assertThatThrownBy(() -> sqlGenerator.getFindAllByProperty(emptyIdentifier,
+				new AggregatePath.ColumnInfo(unquoted("key-column"), unquoted("key-column")), false)) //
+						.isInstanceOf(IllegalArgumentException.class) //
+						.hasMessageContaining(
+								"An empty SqlIdentifier can't be used in condition. Make sure that all composite primary keys are defined in the query");
 	}
 
 	@Test // DATAJDBC-219
@@ -573,15 +577,16 @@ class SqlGeneratorUnitTests {
 
 		final SqlGenerator sqlGenerator = createSqlGenerator(EntityWithReadOnlyProperty.class);
 
-		assertThat(sqlGenerator.getFindAllByProperty(BACKREF, unquoted("key-column"), true)).isEqualToIgnoringCase( //
-				"SELECT " //
-						+ "entity_with_read_only_property.x_id AS x_id, " //
-						+ "entity_with_read_only_property.x_name AS x_name, " //
-						+ "entity_with_read_only_property.x_read_only_value AS x_read_only_value, " //
-						+ "entity_with_read_only_property.key-column AS key-column " //
-						+ "FROM entity_with_read_only_property " //
-						+ "WHERE entity_with_read_only_property.backref = :backref " //
-						+ "ORDER BY key-column" //
+		assertThat(sqlGenerator.getFindAllByProperty(BACKREF,
+				new AggregatePath.ColumnInfo(unquoted("key-column"), unquoted("key-column")), true)).isEqualToIgnoringCase( //
+						"SELECT " //
+								+ "entity_with_read_only_property.x_id AS x_id, " //
+								+ "entity_with_read_only_property.x_name AS x_name, " //
+								+ "entity_with_read_only_property.x_read_only_value AS x_read_only_value, " //
+								+ "entity_with_read_only_property.key-column AS key-column " //
+								+ "FROM entity_with_read_only_property " //
+								+ "WHERE entity_with_read_only_property.backref = :backref " //
+								+ "ORDER BY key-column" //
 		);
 	}
 
@@ -933,8 +938,8 @@ class SqlGeneratorUnitTests {
 	@Nullable
 	private org.springframework.data.relational.core.sql.Column generatedColumn(String path, Class<?> type) {
 
-		return createSqlGenerator(type, AnsiDialect.INSTANCE).getColumn(
-				context.getAggregatePath(PersistentPropertyPathTestUtils.getPath(path, type, context)));
+		return createSqlGenerator(type, AnsiDialect.INSTANCE)
+				.getColumn(context.getAggregatePath(PersistentPropertyPathTestUtils.getPath(path, type, context)));
 	}
 
 	private PersistentPropertyPath<RelationalPersistentProperty> getPath(String path, Class<?> baseType) {

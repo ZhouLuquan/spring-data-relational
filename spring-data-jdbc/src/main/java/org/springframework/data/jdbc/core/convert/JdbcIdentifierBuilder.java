@@ -56,7 +56,7 @@ public class JdbcIdentifierBuilder {
 			@Nullable Object value) {
 
 		Identifier identifier = Identifier.of( //
-				path.getReverseColumnName(), //
+				path.getTableInfo().getReverseColumnInfo().name(), //
 				value, //
 				converter.getColumnType(path.getIdDefiningParentPath().getRequiredIdProperty()) //
 		);
@@ -90,7 +90,7 @@ public class JdbcIdentifierBuilder {
 		Assert.notNull(path, "Path must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		identifier = identifier.withPart(path.getQualifierColumn(), value, path.getQualifierColumnType());
+		identifier = identifier.withPart(path.getTableInfo().getQualifierColumnInfo().name(), value, path.getTableInfo().getQualifierColumnType());
 
 		return this;
 	}

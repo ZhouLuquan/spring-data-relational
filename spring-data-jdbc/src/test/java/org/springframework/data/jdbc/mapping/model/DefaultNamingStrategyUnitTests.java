@@ -61,7 +61,7 @@ public class DefaultNamingStrategyUnitTests {
 	}
 
 	@Test // DATAJDBC-184
-	public void getReverseColumnName() {
+	public void getReverseColumnInfoName() {
 		assertThat(target.getReverseColumnName(persistentEntity.getPersistentProperty("dummySubEntities")))
 				.isEqualTo("dummy_entity");
 	}

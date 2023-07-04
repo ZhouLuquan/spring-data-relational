@@ -321,8 +321,8 @@ class JdbcQueryCreator extends RelationalQueryCreator<ParametrizedQuery> {
 
 		return new Join( //
 				currentTable, //
-				currentTable.column(path.getReverseColumnName()), //
-				parentTable.column(idDefiningParentPath.getIdColumnName()) //
+				currentTable.column(path.getTableInfo().getReverseColumnInfo().name()), //
+				parentTable.column(idDefiningParentPath.getTableInfo().getIdColumnName()) //
 		);
 	}
 

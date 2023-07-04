@@ -27,7 +27,6 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.relational.core.dialect.Dialect;
 import org.springframework.data.relational.core.dialect.RenderContextFactory;
 import org.springframework.data.relational.core.mapping.AggregatePath;
-import org.springframework.data.relational.core.mapping.PersistentPropertyPathExtension;
 import org.springframework.data.relational.core.mapping.RelationalMappingContext;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -134,9 +133,9 @@ class SqlGenerator {
 			return rootCondition.apply(filterColumn);
 		}
 
-		Table subSelectTable = Table.create(parentPath.getQualifiedTableName());
-		Column idColumn = subSelectTable.column(parentPath.getIdColumnName());
-		Column selectFilterColumn = subSelectTable.column(parentPath.getEffectiveIdColumnName());
+		Table subSelectTable = Table.create(parentPath.getTableInfo().getQualifiedTableName());
+		Column idColumn = subSelectTable.column(parentPath.getTableInfo().getIdColumnName());
+		Column selectFilterColumn = subSelectTable.column(parentPath.getTableInfo().getEffectiveIdColumnName());
 
 		Condition innerCondition;
 
@@ -219,7 +218,7 @@ class SqlGenerator {
 
 		AggregatePath path = mappingContext.getAggregatePath(propertyPath);
 
-		return getFindAllByProperty(parentIdentifier, path.getQualifierColumn(), path.isOrdered());
+		return getFindAllByProperty(parentIdentifier, path.getTableInfo().getQualifierColumnInfo(), path.isOrdered());
 	}
 
 	/**
@@ -234,7 +233,7 @@ class SqlGenerator {
 	 *          keyColumn must not be {@code null}.
 	 * @return a SQL String.
 	 */
-	String getFindAllByProperty(Identifier parentIdentifier, @Nullable SqlIdentifier keyColumn, boolean ordered) {
+	String getFindAllByProperty(Identifier parentIdentifier, @Nullable AggregatePath.ColumnInfo keyColumn, boolean ordered) {
 
 		Assert.isTrue(keyColumn != null || !ordered,
 				"If the SQL statement should be ordered a keyColumn to order by must be provided");
@@ -244,14 +243,14 @@ class SqlGenerator {
 		SelectBuilder.SelectWhere builder = selectBuilder( //
 				keyColumn == null //
 						? Collections.emptyList() //
-						: Collections.singleton(keyColumn) //
+						: Collections.singleton(keyColumn.name()) //
 		);
 
 		Condition condition = buildConditionForBackReference(parentIdentifier, table);
 		SelectBuilder.SelectWhereAndOr withWhereClause = builder.where(condition);
 
 		Select select = ordered //
-				? withWhereClause.orderBy(table.column(keyColumn).as(keyColumn)).build() //
+				? withWhereClause.orderBy(table.column(keyColumn.name()).as(keyColumn.alias())).build() //
 				: withWhereClause.build();
 
 		return render(select);
@@ -586,8 +585,8 @@ class SqlGenerator {
 
 		return new Join( //
 				currentTable, //
-				currentTable.column(path.getReverseColumnName()), //
-				parentTable.column(idDefiningParentPath.getIdColumnName()) //
+				currentTable.column(path.getTableInfo().getReverseColumnInfo().name()), //
+				parentTable.column(idDefiningParentPath.getTableInfo().getIdColumnName()) //
 		);
 	}
 
@@ -710,13 +709,13 @@ class SqlGenerator {
 
 	private String createDeleteByPathAndCriteria(AggregatePath path, Function<Column, Condition> rootCondition) {
 
-		Table table = Table.create(path.getQualifiedTableName());
+		Table table = Table.create(path.getTableInfo().getQualifiedTableName());
 
 		DeleteBuilder.DeleteWhere builder = Delete.builder() //
 				.from(table);
 		Delete delete;
 
-		Column filterColumn = table.column(path.getReverseColumnName());
+		Column filterColumn = table.column(path.getTableInfo().getReverseColumnInfo().name());
 
 		if (path.getLength() == 1) {
 
@@ -926,7 +925,7 @@ class SqlGenerator {
 		for (PersistentPropertyPath<RelationalPersistentProperty> path : mappingContext
 				.findPersistentPropertyPaths(entity.getType(), p -> true)) {
 
-			AggregatePath aggregatePath = mappingContext.getAggregatePath( path);
+			AggregatePath aggregatePath = mappingContext.getAggregatePath(path);
 
 			// add a join if necessary
 			Join join = getJoin(aggregatePath);
